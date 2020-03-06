@@ -21,6 +21,37 @@ def find(name, path):
     for root, dirs, files in os.walk(path):
         if name in files:
             return os.path.join(root, name)
+
+
+# ! Iuliana - todo - must modify this function
+def read_fastq_file_write_to_csv(filepath):
+    """
+        Read the fastaq file line by line and save the information to a new CSV file.
+        The CSV file will have, on each line, the sequence ID and the actual sequence
+    """
+    file = open(filepath, "r")
+
+    filename, ext = get_filename_and_extension_from_path(filepath)
+    new_path = os.path.join(get_path_without_filename(filepath), filename + ".csv")
+    csv_file = open(new_path, "w")
+
+    for line in file:
+        if len(line) > 0 and line[0] == "@":
+            previous_line = line
+            aux = line.split(" ")
+            if len(aux) > 1:
+                identifier = aux[0]
+        elif len(previous_line) > 0 and previous_line[0] == "@":
+            sequence = line
+            previous_line = ""
+            # write to file
+            csv_file.write(identifier + "," + sequence)
+        else:
+            continue
+
+    file.close()
+    csv_file.close()
+
     
 '''def read_data(path, normalize=None):
     """
