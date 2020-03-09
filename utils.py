@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from config import *
+from representation.TfIdfStrategy import *
 
 
 def get_filename_and_extension_from_path(path):
@@ -41,10 +42,7 @@ def read_fastq_file_write_to_csv(filepath):
     new_path = os.path.join(new_path, filename + ".csv")
     csv_file = open(new_path, "w")
 
-    i = 0
     for line in file:
-        print(i)
-        i += 1
         if len(line) > 0 and line[0] == "@":
             previous_line = line
             aux = line.split(" ")
@@ -61,8 +59,46 @@ def read_fastq_file_write_to_csv(filepath):
     file.close()
     csv_file.close()
 
+def create_tf_idf_file(folder_path):
+    """
+    Starts from a folder and creates a features file using the TF-IDF feature method.
+    It uses all files from the given folder.
+    The last column will contain the label: 1 - ancient, 0 - modern.
+    The new file is saved in data/tf-idf/modern or data/tf-idf/ancient (depending on the input file)
+    """
+    sequences = []
+    is_ancient = False
+    if folder_path.find("ancient") > 0:
+        is_ancient = True
+
+    for filename in os.listdir(folder_path):
+        file = open(os.path.join(folder_path, filename), "r")
+        for line in file:
+            tokens = line.split(",")
+            if len(tokens) != 2:
+                continue
+            sequence = tokens[1].strip("\n")
+            sequences.append(sequence)
+        file.close()
+
+    new_path = os.path.join("data/tf-idf/ancient.csv")
+    new_file = open(new_path, "w")
+    tf_idf_strategy = TfIdfStrategy(sequences)
+    for seq in sequences:
+        array = tf_idf_strategy.transform(seq)
+        l = array.tolist()
+        if is_ancient:
+            l.append(1)
+        else:
+            l.append(0)
+
+        new_file.write('\n'.join(l))
+
+    new_file.close()
+
+
 if __name__ == "__main__":
-    read_fastq_file_write_to_csv("data/raw/ancient/C58_3_1.fastq")
+    create_tf_idf_file("data/csv/modern/")
 
 
 '''def read_data(path, normalize=None):
