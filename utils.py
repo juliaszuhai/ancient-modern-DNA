@@ -23,7 +23,6 @@ def find(name, path):
             return os.path.join(root, name)
 
 
-# ! Iuliana - todo - must modify this function
 def read_fastq_file_write_to_csv(filepath):
     """
         Read the fastaq file line by line and save the information to a new CSV file.
@@ -32,10 +31,20 @@ def read_fastq_file_write_to_csv(filepath):
     file = open(filepath, "r")
 
     filename, ext = get_filename_and_extension_from_path(filepath)
-    new_path = os.path.join(get_path_without_filename(filepath), filename + ".csv")
+    new_path = get_path_without_filename(filepath)
+    new_path = new_path.replace("raw", "csv")
+    try:
+        os.makedirs(new_path)
+    except FileExistsError:
+        # directory already exists
+        pass
+    new_path = os.path.join(new_path, filename + ".csv")
     csv_file = open(new_path, "w")
 
+    i = 0
     for line in file:
+        print(i)
+        i += 1
         if len(line) > 0 and line[0] == "@":
             previous_line = line
             aux = line.split(" ")
@@ -52,7 +61,10 @@ def read_fastq_file_write_to_csv(filepath):
     file.close()
     csv_file.close()
 
-    
+if __name__ == "__main__":
+    read_fastq_file_write_to_csv("data/raw/ancient/C58_3_1.fastq")
+
+
 '''def read_data(path, normalize=None):
     """
         Reads data from CSV file and applies normalization, if necessary.
@@ -72,9 +84,3 @@ def get_train_test_data(dataset):
     return train, test
 
 '''
-
-
-'''if __name__ == "__main__":
-    # read_fastq_file_write_to_csv("D:\\Programming\\Bachelor's Thesis\\Test2\\data\\T1_1.fastq","D:\\Programming\\Bachelor's Thesis\\Test2\\data\\T1_1.csv")
-    #d = read_data(os.path.join(DATA_PATH, "T1_1.fastq"))
-    #print(d)'''
