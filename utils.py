@@ -2,7 +2,8 @@ import pandas as pd
 import os
 from config import *
 from representation.TfIdfStrategy import *
-
+from globals import *
+import representation.ExtractFeatureStrategy
 
 def get_filename_and_extension_from_path(path):
     """
@@ -59,46 +60,62 @@ def read_fastq_file_write_to_csv(filepath):
     file.close()
     csv_file.close()
 
-def create_tf_idf_file(folder_path):
+def create_tf_idf_file(list_of_files):
     """
-    Starts from a folder and creates a features file using the TF-IDF feature method.
-    It uses all files from the given folder.
+    Starts from a list of files and creates a features file using the TF-IDF feature method.
+    All files are considered when computing IDF.
     The last column will contain the label: 1 - ancient, 0 - modern.
-    The new file is saved in data/tf-idf/modern or data/tf-idf/ancient (depending on the input file)
+    The new file is saved in processed_data/tf-idf_representation.csv
     """
     sequences = []
-    is_ancient = False
-    if folder_path.find("ancient") > 0:
-        is_ancient = True
+    labels = []
 
-    for filename in os.listdir(folder_path):
-        file = open(os.path.join(folder_path, filename), "r")
+    for filename in list_of_files:
+        file = open(filename, "r")
         for line in file:
             tokens = line.split(",")
             if len(tokens) != 2:
                 continue
             sequence = tokens[1].strip("\n")
             sequences.append(sequence)
+            if filename.find("ancient") >= 0:
+                labels.append(1)
+            else:
+                labels.append(0)
         file.close()
 
-    new_path = os.path.join("data/tf-idf/ancient.csv")
+    assert len(sequences) == len(labels)
+
+    new_path = os.path.join(PROCESSED_DATA_FOLDER, "tf-idf/tf_idf_representation.csv")
     new_file = open(new_path, "w")
-    tf_idf_strategy = TfIdfStrategy(sequences)
-    for seq in sequences:
-        array = tf_idf_strategy.transform(seq)
-        l = array.tolist()
-        if is_ancient:
+    all_combinations = ExtractFeatureStrategy.generate_possible_sequences(3)
+    # remove single letters from the list (they do not bring relevant information in the context of tf-idf, as they occur in all sequences)
+    all_combinations = all_combinations[4:]
+    idf_map = get_idf_for_subsequences(all_combinations, sequences)
+    size = len(sequences)
+    for i in range(0, size):
+        seq = sequences[i]
+        features = get_tf_idf_for_sequence(seq, idf_map, len(sequences))
+        l = list(features.values())
+        if labels[i] == 1:
             l.append(1)
         else:
             l.append(0)
 
-        new_file.write('\n'.join(l))
+        aux = ','.join(str(x) for x in l)
+        new_file.write(aux + "\n")
+
+        if i % 100 == 0:
+            print("Sequence: " + str(i) + "out of total: " + str(size))
 
     new_file.close()
 
 
 if __name__ == "__main__":
-    create_tf_idf_file("data/csv/modern/")
+    modern_file = os.path.join(PROCESSED_DATA_FOLDER, "csv/modern/T1_1.csv")
+    ancient_file = os.path.join(PROCESSED_DATA_FOLDER, "csv/ancient/C132_1.csv")
+    list_of_files = [ancient_file, modern_file]
+    create_tf_idf_file(list_of_files)
 
 
 '''def read_data(path, normalize=None):
